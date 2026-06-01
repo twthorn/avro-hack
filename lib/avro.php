@@ -488,7 +488,6 @@ namespace Avro\Internal {
             }
           }
         }
-        // Try primitives directly
         foreach ($union_schemas as $s) {
           if (DatumMatchesSchema($s, $data)) {
             return ReadDatumJson($s, $data);
@@ -534,9 +533,7 @@ namespace Avro\Internal {
     }
 
     public function writeLong(int $n): void {
-      // Zigzag encode
       $n = ($n << 1) ^ ($n >> 63);
-      // Varint encode
       while (($n & ~0x7F) !== 0) {
         $this->buf .= \chr(($n & 0x7F) | 0x80);
         $n = ($n >> 7) & 0x1FFFFFFFFFFFFFF;
@@ -618,7 +615,6 @@ namespace Avro\Internal {
         }
         $shift += 7;
       }
-      // Zigzag decode
       return (($val >> 1) & 0x7FFFFFFFFFFFFFFF) ^ (-($val & 1));
     }
 

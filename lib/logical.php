@@ -4,7 +4,6 @@ namespace Avro\Logical {
   use type \Avro\Schema;
   use type \Avro\SchemaType;
 
-  // Logical type constants
   const string DATE = 'date';
   const string TIME_MILLIS = 'time-millis';
   const string TIME_MICROS = 'time-micros';
@@ -13,7 +12,6 @@ namespace Avro\Logical {
   const string UUID = 'uuid';
   const string DECIMAL = 'decimal';
 
-  // Date: days since Unix epoch (int)
   function DateFromEpochDays(int $days): int {
     return $days;
   }
@@ -30,7 +28,6 @@ namespace Avro\Logical {
     return $date * 86400;
   }
 
-  // Time millis: milliseconds after midnight (int)
   function TimeMillis(int $hours, int $minutes, int $seconds, int $millis = 0): int {
     return ($hours * 3600000) + ($minutes * 60000) + ($seconds * 1000) + $millis;
   }
@@ -45,7 +42,6 @@ namespace Avro\Logical {
     return shape('hours' => $hours, 'minutes' => $minutes, 'seconds' => $seconds, 'millis' => $millis);
   }
 
-  // Time micros: microseconds after midnight (long)
   function TimeMicros(int $hours, int $minutes, int $seconds, int $micros = 0): int {
     return ($hours * 3600000000) + ($minutes * 60000000) + ($seconds * 1000000) + $micros;
   }
@@ -60,7 +56,6 @@ namespace Avro\Logical {
     return shape('hours' => $hours, 'minutes' => $minutes, 'seconds' => $seconds, 'micros' => $micros);
   }
 
-  // Timestamp millis: milliseconds since epoch (long)
   function TimestampMillisFromUnix(int $unix_seconds): int {
     return $unix_seconds * 1000;
   }
@@ -73,7 +68,6 @@ namespace Avro\Logical {
     return (int)(\microtime(true) * 1000);
   }
 
-  // Timestamp micros: microseconds since epoch (long)
   function TimestampMicrosFromUnix(int $unix_seconds): int {
     return $unix_seconds * 1000000;
   }
@@ -86,7 +80,6 @@ namespace Avro\Logical {
     return (int)(\microtime(true) * 1000000);
   }
 
-  // UUID: string type with UUID format validation
   function ValidateUUID(string $uuid): bool {
     return \preg_match(
       '/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i',
@@ -99,9 +92,7 @@ namespace Avro\Logical {
     for ($i = 0; $i < 16; $i++) {
       $bytes .= \chr(\mt_rand(0, 255));
     }
-    // Set version 4
     $bytes[6] = \chr((\ord($bytes[6]) & 0x0f) | 0x40);
-    // Set variant
     $bytes[8] = \chr((\ord($bytes[8]) & 0x3f) | 0x80);
 
     return \sprintf(
@@ -114,8 +105,6 @@ namespace Avro\Logical {
     );
   }
 
-  // Decimal: arbitrary precision decimal stored in bytes or fixed
-  // Represented as unscaled integer value in big-endian two's complement
   class Decimal {
     public function __construct(
       public int $unscaled,
@@ -141,7 +130,6 @@ namespace Avro\Logical {
       $bytes = '';
       $negative = $n < 0;
       if ($negative) {
-        // Two's complement for negative: encode |n|-1, then flip all bits
         $n = -$n - 1;
         $flip = true;
       } else {
@@ -153,7 +141,6 @@ namespace Avro\Logical {
         $n = $n >> 8;
       }
 
-      // Add sign byte if needed
       if (!$flip && \ord($bytes[0]) >= 0x80) {
         $bytes = "\x00".$bytes;
       }

@@ -13,10 +13,8 @@ namespace Avro\Container {
     $sync = GenerateSync();
     $buf = '';
 
-    // Header: magic
     $buf .= MAGIC;
 
-    // Header: metadata as Avro map (hand-encode to avoid circular dependency)
     $meta = dict[
       'avro.schema' => $schema_json,
       'avro.codec' => $codec,
@@ -30,10 +28,8 @@ namespace Avro\Container {
     $meta_enc->writeLong(0);
     $buf .= $meta_enc->buffer();
 
-    // Header: sync marker
     $buf .= $sync;
 
-    // Data blocks
     if (\count($records) > 0) {
       $block_encoder = new \Avro\Internal\Encoder();
       foreach ($records as $record) {
@@ -77,13 +73,11 @@ namespace Avro\Container {
         throw new \AvroException("container file too short");
       }
 
-      // Read magic
       $magic = \substr($data, 0, 4);
       if ($magic !== MAGIC) {
         throw new \AvroException("invalid Avro container file magic");
       }
 
-      // Read metadata using decoder starting after magic
       $d = \Avro\Internal\Decoder::FromString(\substr($data, 4));
       $meta = dict[];
       $block_count = $d->readLong();
@@ -102,7 +96,6 @@ namespace Avro\Container {
 
       $meta_end = 4 + $d->getOffset();
 
-      // Parse schema from metadata
       $schema_json = $meta['avro.schema'] ?? '';
       if ($schema_json === '') {
         throw new \AvroException("container file missing avro.schema metadata");
@@ -110,7 +103,6 @@ namespace Avro\Container {
       $this->schema = \Avro\ParseSchema($schema_json);
       $this->codec = $meta['avro.codec'] ?? CODEC_NULL;
 
-      // Read sync marker
       $this->sync = \substr($data, $meta_end, SYNC_SIZE);
       $this->data_offset = $meta_end + SYNC_SIZE;
     }
@@ -136,7 +128,6 @@ namespace Avro\Container {
         $block_bytes = $block_d->readBytes();
         $pos += $block_d->getOffset();
 
-        // Verify sync
         if ($pos + SYNC_SIZE > $data_len) {
           throw new \AvroException("unexpected end of file before sync marker");
         }
@@ -146,7 +137,6 @@ namespace Avro\Container {
         }
         $pos += SYNC_SIZE;
 
-        // Decompress if needed
         if ($this->codec === CODEC_DEFLATE) {
           $decompressed = \gzinflate($block_bytes);
           if (!($decompressed is string)) {
@@ -155,7 +145,6 @@ namespace Avro\Container {
           $block_bytes = $decompressed;
         }
 
-        // Read records from block
         $record_d = \Avro\Internal\Decoder::FromString($block_bytes);
         for ($i = 0; $i < (int)$object_count; $i++) {
           $records[] = \Avro\Internal\ReadDatum($this->schema, $record_d);

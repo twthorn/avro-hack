@@ -83,7 +83,6 @@ namespace Avro\Resolution\Internal {
       }
     }
 
-    // Promotions per Avro spec
     if ($writer->type === SchemaType::INT && $reader->type === SchemaType::LONG) {
       return $reader;
     }
@@ -109,7 +108,6 @@ namespace Avro\Resolution\Internal {
       return $reader;
     }
 
-    // Writer union: if reader is not a union, try matching one writer branch
     if ($writer->type === SchemaType::UNION && $reader->type !== SchemaType::UNION) {
       foreach ($writer->union as $branch) {
         try {
@@ -120,7 +118,6 @@ namespace Avro\Resolution\Internal {
       }
     }
 
-    // Reader union: writer can match any branch
     if ($reader->type === SchemaType::UNION) {
       foreach ($reader->union as $branch) {
         try {
@@ -148,7 +145,6 @@ namespace Avro\Resolution {
     Schema $reader,
     \Avro\Internal\Decoder $d,
   ): mixed {
-    // Same type
     if ($writer->type === $reader->type) {
       switch ($writer->type) {
         case SchemaType::NULL_TYPE:
@@ -222,7 +218,6 @@ namespace Avro\Resolution {
             throw new \AvroException("union index out of range");
           }
           $w_branch = $w_branches[$idx];
-          // Find matching reader branch
           foreach ($reader->union as $r_branch) {
             try {
               Internal\ResolveSchemas($w_branch, $r_branch);
@@ -235,7 +230,6 @@ namespace Avro\Resolution {
       }
     }
 
-    // Promotions
     if ($writer->type === SchemaType::INT && $reader->type === SchemaType::LONG) {
       return (int)$d->readInt();
     }
@@ -261,7 +255,6 @@ namespace Avro\Resolution {
       return $d->readBytes();
     }
 
-    // Reader union
     if ($reader->type === SchemaType::UNION) {
       foreach ($reader->union as $r_branch) {
         try {
@@ -281,13 +274,11 @@ namespace Avro\Resolution {
     Schema $reader,
     \Avro\Internal\Decoder $d,
   ): dict<string, mixed> {
-    // Build lookup of writer fields by name
     $writer_field_map = dict[];
     foreach ($writer->fields as $f) {
       $writer_field_map[$f->name] = $f;
     }
 
-    // Read writer fields in order using resolution for nested types
     $writer_values = dict[];
     $reader_field_map = dict[];
     foreach ($reader->fields as $rf) {
@@ -299,12 +290,10 @@ namespace Avro\Resolution {
         $rf = $reader_field_map[$wf->name];
         $writer_values[$wf->name] = ReadResolved($wf->schema, $rf->schema, $d);
       } else {
-        // Field in writer but not in reader — skip it by reading with writer schema
         \Avro\Internal\ReadDatum($wf->schema, $d);
       }
     }
 
-    // Build reader record
     $result = dict[];
     foreach ($reader->fields as $rf) {
       if (\array_key_exists($rf->name, $writer_values)) {
