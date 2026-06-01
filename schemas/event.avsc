@@ -1,0 +1,13 @@
+{
+  "type": "record",
+  "name": "Event",
+  "namespace": "com.example",
+  "fields": [
+    {"name": "id", "type": "long"},
+    {"name": "type", "type": {"type": "enum", "name": "EventType", "symbols": ["CLICK", "VIEW", "PURCHASE"]}},
+    {"name": "timestamp", "type": "long"},
+    {"name": "tags", "type": {"type": "array", "items": "string"}},
+    {"name": "metadata", "type": {"type": "map", "values": "string"}},
+    {"name": "payload", "type": "bytes"}
+  ]
+}

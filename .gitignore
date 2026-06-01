@@ -1,0 +1,6 @@
+.hh_client_mode
+.hhconfig.hdf
+/vendor/
+*.swp
+*.swo
+*~

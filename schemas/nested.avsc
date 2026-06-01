@@ -1,0 +1,28 @@
+{
+  "type": "record",
+  "name": "Order",
+  "namespace": "com.example",
+  "fields": [
+    {"name": "order_id", "type": "string"},
+    {"name": "customer", "type": {
+      "type": "record",
+      "name": "Customer",
+      "fields": [
+        {"name": "id", "type": "long"},
+        {"name": "name", "type": "string"},
+        {"name": "tier", "type": {"type": "enum", "name": "Tier", "symbols": ["BRONZE", "SILVER", "GOLD", "PLATINUM"]}}
+      ]
+    }},
+    {"name": "items", "type": {"type": "array", "items": {
+      "type": "record",
+      "name": "LineItem",
+      "fields": [
+        {"name": "sku", "type": "string"},
+        {"name": "quantity", "type": "int"},
+        {"name": "price_cents", "type": "long"}
+      ]
+    }}},
+    {"name": "shipping_address", "type": ["null", "string"], "default": null},
+    {"name": "tracking_id", "type": {"type": "fixed", "name": "TrackingId", "size": 16}}
+  ]
+}
