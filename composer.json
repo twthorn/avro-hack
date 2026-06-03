@@ -1,0 +1,8 @@
+{
+  "name": "twthorn/avro-hack",
+  "description": "Apache Avro serialization library for Hack (HHVM)",
+  "license": "MIT",
+  "require": {
+    "hhvm": "^4.128"
+  }
+}

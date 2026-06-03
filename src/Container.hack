@@ -1,4 +1,3 @@
-<?hh // strict
 
 namespace Avro\Container {
   use type \Avro\Schema;
@@ -19,7 +18,7 @@ namespace Avro\Container {
       'avro.schema' => $schema_json,
       'avro.codec' => $codec,
     ];
-    $meta_enc = new \Avro\Internal\Encoder();
+    $meta_enc = new \Avro\Encoder();
     $meta_enc->writeLong(\count($meta));
     foreach ($meta as $k => $v) {
       $meta_enc->writeString($k);
@@ -31,21 +30,21 @@ namespace Avro\Container {
     $buf .= $sync;
 
     if (\count($records) > 0) {
-      $block_encoder = new \Avro\Internal\Encoder();
+      $block_encoder = new \Avro\Encoder();
       foreach ($records as $record) {
-        \Avro\Internal\WriteDatum($schema, $record, $block_encoder);
+        \Avro\_Private\WriteDatum($schema, $record, $block_encoder);
       }
       $block_data = $block_encoder->buffer();
 
       if ($codec === CODEC_DEFLATE) {
         $compressed = \gzdeflate($block_data);
         if (!($compressed is string)) {
-          throw new \AvroException("deflate compression failed");
+          throw new \Avro\AvroException("deflate compression failed");
         }
         $block_data = $compressed;
       }
 
-      $block_header = new \Avro\Internal\Encoder();
+      $block_header = new \Avro\Encoder();
       $block_header->writeLong(\count($records));
       $block_header->writeBytes($block_data);
       $buf .= $block_header->buffer();
@@ -70,15 +69,15 @@ namespace Avro\Container {
       $this->data = $data;
 
       if (\strlen($data) < 4) {
-        throw new \AvroException("container file too short");
+        throw new \Avro\AvroException("container file too short");
       }
 
       $magic = \substr($data, 0, 4);
       if ($magic !== MAGIC) {
-        throw new \AvroException("invalid Avro container file magic");
+        throw new \Avro\AvroException("invalid Avro container file magic");
       }
 
-      $d = \Avro\Internal\Decoder::FromString(\substr($data, 4));
+      $d = \Avro\Decoder::FromString(\substr($data, 4));
       $meta = dict[];
       $block_count = $d->readLong();
       while ($block_count !== 0) {
@@ -98,7 +97,7 @@ namespace Avro\Container {
 
       $schema_json = $meta['avro.schema'] ?? '';
       if ($schema_json === '') {
-        throw new \AvroException("container file missing avro.schema metadata");
+        throw new \Avro\AvroException("container file missing avro.schema metadata");
       }
       $this->schema = \Avro\ParseSchema($schema_json);
       $this->codec = $meta['avro.codec'] ?? CODEC_NULL;
@@ -122,32 +121,32 @@ namespace Avro\Container {
       $data_len = \strlen($data);
 
       while ($pos < $data_len) {
-        $block_d = \Avro\Internal\Decoder::FromString(\substr($data, $pos));
+        $block_d = \Avro\Decoder::FromString(\substr($data, $pos));
 
         $object_count = $block_d->readLong();
         $block_bytes = $block_d->readBytes();
         $pos += $block_d->getOffset();
 
         if ($pos + SYNC_SIZE > $data_len) {
-          throw new \AvroException("unexpected end of file before sync marker");
+          throw new \Avro\AvroException("unexpected end of file before sync marker");
         }
         $file_sync = \substr($data, $pos, SYNC_SIZE);
         if ($file_sync !== $this->sync) {
-          throw new \AvroException("sync marker mismatch");
+          throw new \Avro\AvroException("sync marker mismatch");
         }
         $pos += SYNC_SIZE;
 
         if ($this->codec === CODEC_DEFLATE) {
           $decompressed = \gzinflate($block_bytes);
           if (!($decompressed is string)) {
-            throw new \AvroException("deflate decompression failed");
+            throw new \Avro\AvroException("deflate decompression failed");
           }
           $block_bytes = $decompressed;
         }
 
-        $record_d = \Avro\Internal\Decoder::FromString($block_bytes);
+        $record_d = \Avro\Decoder::FromString($block_bytes);
         for ($i = 0; $i < (int)$object_count; $i++) {
-          $records[] = \Avro\Internal\ReadDatum($this->schema, $record_d);
+          $records[] = \Avro\_Private\ReadDatum($this->schema, $record_d);
         }
       }
 

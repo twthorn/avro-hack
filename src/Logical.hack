@@ -1,4 +1,3 @@
-<?hh // strict
 
 namespace Avro\Logical {
   use type \Avro\Schema;

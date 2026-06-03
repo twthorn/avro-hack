@@ -1,4 +1,3 @@
-<?hh // strict
 
 namespace Avro\Fingerprint {
   use type \Avro\Schema;
